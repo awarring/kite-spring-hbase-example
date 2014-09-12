@@ -36,7 +36,7 @@ public class WebPageSnapshotController {
   private WebPageSnapshotService webPageSnapshotService;
 
   @RequestMapping(value = "/", method = RequestMethod.GET)
-  public ModelAndView admin() {
+  public ModelAndView home() {
     return new ModelAndView("home");
   }
 

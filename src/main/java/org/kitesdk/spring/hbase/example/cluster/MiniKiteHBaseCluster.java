@@ -68,14 +68,36 @@ public class MiniKiteHBaseCluster {
 
   private HBaseDatasetRepository repo;
 
+  /**
+   * Construct the MiniKiteHBaseCluster
+   * 
+   * @param localFsLocation
+   *          The location on the local filesystem where the HDFS filesystem
+   *          blocks and metadata are stored.
+   * @param zkPort
+   *          The zookeeper port
+   * @param clean
+   *          True if we want any old filesystem to be removed, and we want to
+   *          start fresh. Otherwise, false.
+   */
   public MiniKiteHBaseCluster(String localFsLocation, int zkPort, boolean clean) {
     this.localFsLocation = localFsLocation;
     this.zkPort = zkPort;
     this.clean = clean;
   }
 
-  public void startup() throws URISyntaxException, IOException,
-      InterruptedException {
+  /**
+   * Startup the mini cluster
+   * 
+   * @throws IOException
+   * @throws InterruptedException
+   */
+  public void startup() throws IOException, InterruptedException {
+
+    // Initialize the Hadoop config we'll use
+    config = new Configuration();
+
+    // If clean, then remove the localFsLocation so we can start fresh.
     if (clean) {
       LOG.info("Cleaning cluster data at: " + localFsLocation
           + " and starting fresh.");
@@ -85,26 +107,29 @@ public class MiniKiteHBaseCluster {
     String dfsLocation = localFsLocation + "/dfs";
     String zkLocation = localFsLocation + "/zk";
 
-    config = new Configuration();
-    config.set("hdfs.minidfs.basedir", dfsLocation);
-
+    // If the localFsLocation exists (it wasn't cleaned), then we don't want to
+    // format since it probably has the filesystem initialized.
     boolean format = true;
     File f = new File(dfsLocation);
     if (f.exists() && f.isDirectory()) {
       format = false;
     }
 
+    // Start a 1 namenode, 1 datanode mini DFS cluster
+    config.set("hdfs.minidfs.basedir", dfsLocation);
     dfsCluster = new MiniDFSCluster.Builder(config).format(format)
         .numDataNodes(1).manageDataDfsDirs(true).manageNameDfsDirs(true)
         .build();
     dfsCluster.waitClusterUp();
     FileSystem fs = dfsCluster.getFileSystem();
 
+    // Start a 1 node ZK Cluster
     zkCluster = new MiniZooKeeperCluster(config);
     zkCluster.setDefaultClientPort(zkPort);
     int clientPort = zkCluster.startup(new File(zkLocation), 1);
     config.set(HConstants.ZOOKEEPER_CLIENT_PORT, Integer.toString(clientPort));
 
+    // Initialize HDFS path configs required by HBase
     Path hbaseDir = new Path(fs.makeQualified(fs.getHomeDirectory()), "hbase");
     FSUtils.setRootDir(config, hbaseDir);
     fs.mkdirs(hbaseDir);
@@ -123,6 +148,7 @@ public class MiniKiteHBaseCluster {
       config.setInt(ServerManager.WAIT_ON_REGIONSERVERS_MAXTOSTART, numSlaves);
     }
 
+    // Start the HBase cluster
     hbaseCluster = new MiniHBaseCluster(config, numMasters, numSlaves, null,
         null);
     // Don't leave here till we've done a successful scan of the hbase:meta
@@ -134,6 +160,8 @@ public class MiniKiteHBaseCluster {
     s.close();
     t.close();
 
+    // Initialize the HBase cluster with the Kite required managed_schemas table
+    // if it doesn't exist.
     HBaseAdmin admin = new HBaseAdmin(config);
     try {
       if (!admin.tableExists("managed_schemas")) {
@@ -149,6 +177,41 @@ public class MiniKiteHBaseCluster {
     repo = new HBaseDatasetRepository.Builder().configuration(config).build();
   }
 
+  /**
+   * Shutdown the mini cluster, and set member variables to null
+   * 
+   * @throws IOException
+   */
+  public void shutdown() throws IOException {
+    // unset the configuration for MIN and MAX RS to start
+    config.setInt(ServerManager.WAIT_ON_REGIONSERVERS_MINTOSTART, -1);
+    config.setInt(ServerManager.WAIT_ON_REGIONSERVERS_MAXTOSTART, -1);
+    if (hbaseCluster != null) {
+      hbaseCluster.shutdown();
+      // Wait till hbase is down before going on to shutdown zk.
+      this.hbaseCluster.waitUntilShutDown();
+      this.hbaseCluster = null;
+    }
+
+    zkCluster.shutdown();
+    zkCluster = null;
+
+    dfsCluster.shutdown();
+    dfsCluster = null;
+    repo = null;
+  }
+
+  /**
+   * Create the HBase datasets in the map of dataset names to schema files
+   * 
+   * @param datasetNameSchemaMap
+   *          A map of dataset names to the Avro schema files that we want to
+   *          create. The schema files are a location, which can be a location
+   *          on the classpath, represented with a "classpath:/" prefix.
+   * @return THe list of created datasets.
+   * @throws URISyntaxException
+   * @throws IOException
+   */
   public List<RandomAccessDataset<?>> createOrUpdateDatasets(
       Map<String, String> datasetNameSchemaMap) throws URISyntaxException,
       IOException {
@@ -174,27 +237,5 @@ public class MiniKiteHBaseCluster {
       }
     }
     return datasets;
-  }
-
-  public void shutdown() throws IOException {
-    // unset the configuration for MIN and MAX RS to start
-    config.setInt(ServerManager.WAIT_ON_REGIONSERVERS_MINTOSTART, -1);
-    config.setInt(ServerManager.WAIT_ON_REGIONSERVERS_MAXTOSTART, -1);
-    if (hbaseCluster != null) {
-      hbaseCluster.shutdown();
-      // Wait till hbase is down before going on to shutdown zk.
-      this.hbaseCluster.waitUntilShutDown();
-      this.hbaseCluster = null;
-    }
-
-    zkCluster.shutdown();
-    zkCluster = null;
-
-    dfsCluster.shutdown();
-    dfsCluster = null;
-    config.set("fs.defaultFS", "file:///");
-    config.set("fs.default.name", "file:///");
-
-    repo = null;
   }
 }
