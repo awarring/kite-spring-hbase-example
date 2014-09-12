@@ -42,9 +42,8 @@ public class WebPageSnapshotController {
 
   @RequestMapping(value = "/takeSnapshot", method = RequestMethod.POST)
   @ResponseBody
-  public int takeSnapshot(@RequestParam("url") String url) throws IOException {
-    webPageSnapshotService.takeSnapshot(url);
-    return 0;
+  public WebPageSnapshotMeta takeSnapshot(@RequestParam("url") String url) throws IOException {
+    return webPageSnapshotService.takeSnapshot(url);
   }
 
   @RequestMapping(value = "/mostRecentMeta", method = RequestMethod.GET)
