@@ -30,11 +30,12 @@ src/main/resources/hbase-prod.properties with the appropriate HBase configs.
 Running
 ==========================
 
-To run locally in dev mode, simply run the following maven command:
+To run locally in dev mode, simply run the following maven command, which
+launches an in process Tomcat to run the app in (we have pretty high memory
+settings since not only is this running Tomcat, but it's also launching an
+HDFS and HBase cluster in the app):
 
-mvn clean install
-
-And copy the webapps/ROOT.war to a local tomcat instance.
+env MAVEN_OPTS="-Xmx2048m -XX:MaxPermSize=256m" mvn clean install tomcat7:run
 
 To run on openshift, create a JBoss Tomcat7 application, giving this github
 as the source application. See openshift docs for further directions on
@@ -45,5 +46,6 @@ take and fetch snapshots. To take a snapshot, run:
 
 curl --data "url=http://www.google.com/" http://hostname/takeSnapshot
 
-Then go do http://hostname/mostRecentMeta?url=http://www.google.com/ to see the
-result.
+Then go go to the following URL in your browser to see the result:
+
+http://hostname/mostRecentMeta?url=http://www.google.com/

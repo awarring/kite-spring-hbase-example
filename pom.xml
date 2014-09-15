@@ -111,12 +111,24 @@
       <artifactId>kite-hadoop-cdh5-test-dependencies</artifactId>
       <version>0.16.0</version>
       <type>pom</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>servlet-api</artifactId>
+          <groupId>javax.servlet</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.kitesdk</groupId>
       <artifactId>kite-hbase-cdh5-test-dependencies</artifactId>
       <version>0.16.0</version>
       <type>pom</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>servlet-api-2.5</artifactId>
+          <groupId>org.mortbay.jetty</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- Library used for parsing and extracting content from HTML -->
     <dependency>
@@ -235,7 +247,7 @@
         <artifactId>tomcat7-maven-plugin</artifactId>
         <version>2.1</version>
         <configuration>
-          <warSourceDirectory>webapps/</warSourceDirectory>
+          <warSourceDirectory>${project.build.directory}/${project.build.finalName}</warSourceDirectory>
           <path>/</path>
         </configuration>
       </plugin>
