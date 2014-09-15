@@ -1,4 +1,5 @@
 package org.kitesdk.spring.hbase.example.cluster;
+
 /*
  * Copyright 2009 The Apache Software Foundation
  *
@@ -42,12 +43,19 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.server.persistence.FileTxnLog;
 
 /**
- * TODO: Most of the code in this class is ripped from ZooKeeper tests. Instead
- * of redoing it, we should contribute updates to their code which let us more
- * easily access testing helper objects.
+ * This class was ripped from MiniZooKeeperCluster from the HBase tests. Changes
+ * made include:
+ * 
+ * 1. The startup method now takes a bindAddress, which allows us to configure
+ * which IP the ZK server binds to. This was not configurable in the original
+ * class.
+ * 
+ * 2. The ZK cluster will re-use a data dir on the local filesystem if it
+ * already exists instead of blowing it away.
  */
 public class MiniKiteZooKeeperCluster {
-  private static final Log LOG = LogFactory.getLog(MiniKiteZooKeeperCluster.class);
+  private static final Log LOG = LogFactory
+      .getLog(MiniKiteZooKeeperCluster.class);
 
   private static final int TICK_TIME = 2000;
   private static final int CONNECTION_TIMEOUT = 30000;
@@ -90,10 +98,10 @@ public class MiniKiteZooKeeperCluster {
   }
 
   /**
-   * Selects a ZK client port. Returns the default port if specified.
-   * Otherwise, returns a random port. The random port is selected from the
-   * range between 49152 to 65535. These ports cannot be registered with IANA
-   * and are intended for dynamic allocation (see http://bit.ly/dynports).
+   * Selects a ZK client port. Returns the default port if specified. Otherwise,
+   * returns a random port. The random port is selected from the range between
+   * 49152 to 65535. These ports cannot be registered with IANA and are intended
+   * for dynamic allocation (see http://bit.ly/dynports).
    */
   private int selectClientPort() {
     if (defaultClientPort > 0) {
@@ -107,7 +115,7 @@ public class MiniKiteZooKeeperCluster {
   }
 
   public int getBackupZooKeeperServerNum() {
-    return zooKeeperServers.size()-1;
+    return zooKeeperServers.size() - 1;
   }
 
   public int getZooKeeperServerNum() {
@@ -124,19 +132,25 @@ public class MiniKiteZooKeeperCluster {
     FileTxnLog.setPreallocSize(100 * 1024);
   }
 
-  public int startup(File baseDir) throws IOException, InterruptedException {
-    return startup(baseDir,1);
+  public int startup(File baseDir, boolean clean) throws IOException,
+      InterruptedException {
+    return startup(baseDir, 1, "0,0.0.0", clean);
   }
 
   /**
+   * NOTE: Changed from original where params bindAddress and clean have been
+   * added.
+   * 
    * @param baseDir
    * @param numZooKeeperServers
+   * @param bindAddress
+   * @param clean
    * @return ClientPort server bound to.
    * @throws IOException
    * @throws InterruptedException
    */
-  public int startup(File baseDir, int numZooKeeperServers) throws IOException,
-      InterruptedException {
+  public int startup(File baseDir, int numZooKeeperServers, String bindAddress,
+      boolean clean) throws IOException, InterruptedException {
     if (numZooKeeperServers <= 0)
       return -1;
 
@@ -147,8 +161,8 @@ public class MiniKiteZooKeeperCluster {
 
     // running all the ZK servers
     for (int i = 0; i < numZooKeeperServers; i++) {
-      File dir = new File(baseDir, "zookeeper_"+i).getAbsoluteFile();
-      recreateDir(dir);
+      File dir = new File(baseDir, "zookeeper_" + i).getAbsoluteFile();
+      recreateDir(dir, clean);
       int tickTimeToUse;
       if (this.tickTime > 0) {
         tickTimeToUse = this.tickTime;
@@ -160,17 +174,14 @@ public class MiniKiteZooKeeperCluster {
       while (true) {
         try {
           standaloneServerFactory = new NIOServerCnxnFactory();
-          String bindAddress = "0.0.0.0";
-          if (System.getenv("OPENSHIFT_JBOSSEWS_IP") != null) {
-            bindAddress = System.getenv("OPENSHIFT_JBOSSEWS_IP");
-          }
-          standaloneServerFactory.configure(
-            new InetSocketAddress(bindAddress, tentativePort),
-            configuration.getInt(HConstants.ZOOKEEPER_MAX_CLIENT_CNXNS,
-              1000));
+          // NOTE: Changed from the original, where InetSocketAddress was
+          // originally
+          // created to bind to the wildcard IP, we now configure it.
+          standaloneServerFactory.configure(new InetSocketAddress(bindAddress,
+              tentativePort), configuration.getInt(
+              HConstants.ZOOKEEPER_MAX_CLIENT_CNXNS, 1000));
         } catch (BindException e) {
-          LOG.debug("Failed binding ZK Server to client port: " +
-              tentativePort);
+          LOG.debug("Failed binding ZK Server to client port: " + tentativePort);
           // This port is already in use, try to use another.
           tentativePort++;
           continue;
@@ -180,7 +191,7 @@ public class MiniKiteZooKeeperCluster {
 
       // Start up this ZK server
       standaloneServerFactory.startup(server);
-      
+
       String serverHostname = "localhost";
       if (System.getenv("OPENSHIFT_JBOSSEWS_IP") != null) {
         serverHostname = System.getenv("OPENSHIFT_JBOSSEWS_IP");
@@ -199,14 +210,20 @@ public class MiniKiteZooKeeperCluster {
     activeZKServerIndex = 0;
     started = true;
     clientPort = clientPortList.get(activeZKServerIndex);
-    LOG.info("Started MiniZK Cluster and connect 1 ZK server " +
-        "on client port: " + clientPort);
+    LOG.info("Started MiniZK Cluster and connect 1 ZK server "
+        + "on client port: " + clientPort);
     return clientPort;
   }
 
-  private void recreateDir(File dir) throws IOException {
-    if (dir.exists()) {
+  /*
+   * NOTE: Changed from original where param clean has been added.
+   */
+  private void recreateDir(File dir, boolean clean) throws IOException {
+    if (dir.exists() && clean) {
       FileUtil.fullyDelete(dir);
+    } else if (dir.exists() && !clean) {
+      // the directory's exist, and we don't want to clean, so exit
+      return;
     }
     try {
       dir.mkdirs();
@@ -224,8 +241,8 @@ public class MiniKiteZooKeeperCluster {
     }
     // shut down all the zk servers
     for (int i = 0; i < standaloneServerFactoryList.size(); i++) {
-      NIOServerCnxnFactory standaloneServerFactory =
-        standaloneServerFactoryList.get(i);
+      NIOServerCnxnFactory standaloneServerFactory = standaloneServerFactoryList
+          .get(i);
       int clientPort = clientPortList.get(i);
 
       standaloneServerFactory.shutdown();
@@ -244,20 +261,21 @@ public class MiniKiteZooKeeperCluster {
     LOG.info("Shutdown MiniZK cluster with all ZK servers");
   }
 
-  /**@return clientPort return clientPort if there is another ZK backup can run
+  /**
+   * @return clientPort return clientPort if there is another ZK backup can run
    *         when killing the current active; return -1, if there is no backups.
    * @throws IOException
    * @throws InterruptedException
    */
   public int killCurrentActiveZooKeeperServer() throws IOException,
-                                        InterruptedException {
-    if (!started || activeZKServerIndex < 0 ) {
+      InterruptedException {
+    if (!started || activeZKServerIndex < 0) {
       return -1;
     }
 
     // Shutdown the current active one
-    NIOServerCnxnFactory standaloneServerFactory =
-      standaloneServerFactoryList.get(activeZKServerIndex);
+    NIOServerCnxnFactory standaloneServerFactory = standaloneServerFactoryList
+        .get(activeZKServerIndex);
     int clientPort = clientPortList.get(activeZKServerIndex);
 
     standaloneServerFactory.shutdown();
@@ -269,36 +287,37 @@ public class MiniKiteZooKeeperCluster {
     standaloneServerFactoryList.remove(activeZKServerIndex);
     clientPortList.remove(activeZKServerIndex);
     zooKeeperServers.remove(activeZKServerIndex);
-    LOG.info("Kill the current active ZK servers in the cluster " +
-        "on client port: " + clientPort);
+    LOG.info("Kill the current active ZK servers in the cluster "
+        + "on client port: " + clientPort);
 
     if (standaloneServerFactoryList.size() == 0) {
       // there is no backup servers;
       return -1;
     }
     clientPort = clientPortList.get(activeZKServerIndex);
-    LOG.info("Activate a backup zk server in the cluster " +
-        "on client port: " + clientPort);
+    LOG.info("Activate a backup zk server in the cluster " + "on client port: "
+        + clientPort);
     // return the next back zk server's port
     return clientPort;
   }
 
   /**
    * Kill one back up ZK servers
+   * 
    * @throws IOException
    * @throws InterruptedException
    */
   public void killOneBackupZooKeeperServer() throws IOException,
-                                        InterruptedException {
-    if (!started || activeZKServerIndex < 0 ||
-        standaloneServerFactoryList.size() <= 1) {
-      return ;
+      InterruptedException {
+    if (!started || activeZKServerIndex < 0
+        || standaloneServerFactoryList.size() <= 1) {
+      return;
     }
 
-    int backupZKServerIndex = activeZKServerIndex+1;
+    int backupZKServerIndex = activeZKServerIndex + 1;
     // Shutdown the current active one
-    NIOServerCnxnFactory standaloneServerFactory =
-      standaloneServerFactoryList.get(backupZKServerIndex);
+    NIOServerCnxnFactory standaloneServerFactory = standaloneServerFactoryList
+        .get(backupZKServerIndex);
     int clientPort = clientPortList.get(backupZKServerIndex);
 
     standaloneServerFactory.shutdown();
@@ -310,8 +329,8 @@ public class MiniKiteZooKeeperCluster {
     standaloneServerFactoryList.remove(backupZKServerIndex);
     clientPortList.remove(backupZKServerIndex);
     zooKeeperServers.remove(backupZKServerIndex);
-    LOG.info("Kill one backup ZK servers in the cluster " +
-        "on client port: " + clientPort);
+    LOG.info("Kill one backup ZK servers in the cluster " + "on client port: "
+        + clientPort);
   }
 
   // XXX: From o.a.zk.t.ClientBase

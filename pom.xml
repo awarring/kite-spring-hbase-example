@@ -25,6 +25,12 @@
       </properties>
     </profile>
     <profile>
+      <id>openshift</id>
+      <properties>
+        <spring.profile>openshift</spring.profile>
+      </properties>
+    </profile>
+    <profile>
       <id>prod</id>
       <properties>
         <spring.profile>prod</spring.profile>
@@ -154,7 +160,7 @@
     <resources>
       <resource>
         <directory>src/main/resources</directory>
-       </resource>
+      </resource>
       <resource>
         <directory>src/main/avro</directory>
       </resource>
@@ -222,6 +228,15 @@
           <compilerArgument>-Xlint:unchecked</compilerArgument>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.tomcat.maven</groupId>
+        <artifactId>tomcat7-maven-plugin</artifactId>
+        <version>2.1</version>
+        <configuration>
+          <warSourceDirectory>webapps/</warSourceDirectory>
+          <path>/</path>
         </configuration>
       </plugin>
     </plugins>

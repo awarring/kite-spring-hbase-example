@@ -1,0 +1,40 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.1.xsd"
+  profile="openshift">
+
+  <bean id="hbasePropertyConfigurer"
+    class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
+    <property name="ignoreUnresolvablePlaceholders" value="true" />
+    <property name="locations">
+      <list>
+        <value>classpath:/hbase-openshift.properties</value>
+      </list>
+    </property>
+    <property name="properties">
+      <props>
+        <prop key="hbase.zk.host">#{systemEnvironment['OPENSHIFT_JBOSSEWS_IP']}</prop>
+      </props>
+    </property>
+  </bean>
+
+  <bean id="cluster"
+    class="org.kitesdk.spring.hbase.example.cluster.MiniKiteHBaseCluster"
+    init-method="startup" destroy-method="shutdown">
+    <constructor-arg index="0" value="${hbase.local.fs.path}" />
+    <constructor-arg index="1" value="${hbase.zk.port}" />
+    <constructor-arg index="2" value="${hbase.clean.cluster}" />
+  </bean>
+
+  <bean id="datasets" factory-bean="cluster" factory-method="createOrUpdateDatasets">
+    <constructor-arg index="0">
+      <map>
+        <entry key="webpagesnapshots.WebPageSnapshotModel"
+          value="classpath:hbase-models/WebPageSnapshotModel.avsc" />
+      </map>
+    </constructor-arg>
+  </bean>
+
+</beans>

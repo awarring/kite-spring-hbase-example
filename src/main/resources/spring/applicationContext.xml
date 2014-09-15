@@ -5,6 +5,7 @@
     http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
 
   <import resource="classpath:/spring/devProfileApplicationContext.xml" />
+  <import resource="classpath:/spring/openshiftProfileApplicationContext.xml" />
   <import resource="classpath:/spring/prodProfileApplicationContext.xml" />
 
   <bean id="webPageSnapshotModels" class="org.kitesdk.data.Datasets"
