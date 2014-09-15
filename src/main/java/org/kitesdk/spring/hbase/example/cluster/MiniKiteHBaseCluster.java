@@ -17,6 +17,9 @@ package org.kitesdk.spring.hbase.example.cluster;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +39,9 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.master.ServerManager;
 import org.apache.hadoop.hbase.util.FSUtils;
-import org.apache.hadoop.hbase.zookeeper.MiniZooKeeperCluster;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
+import org.apache.hadoop.hdfs.MiniDFSNNTopology;
+import org.apache.hadoop.hdfs.server.common.HdfsServerConstants.StartupOption;
 import org.kitesdk.data.DatasetDescriptor;
 import org.kitesdk.data.RandomAccessDataset;
 import org.kitesdk.data.hbase.HBaseDatasetRepository;
@@ -63,7 +67,7 @@ public class MiniKiteHBaseCluster {
   private Configuration config;
 
   private MiniDFSCluster dfsCluster;
-  private MiniZooKeeperCluster zkCluster;
+  private MiniKiteZooKeeperCluster zkCluster;
   private MiniHBaseCluster hbaseCluster;
 
   private HBaseDatasetRepository repo;
@@ -86,16 +90,69 @@ public class MiniKiteHBaseCluster {
     this.clean = clean;
   }
 
+  private static class MyMiniDFSCluster extends MiniDFSCluster {
+
+    public MyMiniDFSCluster(int nameNodePort, int nameNodeHttpPort,
+        Configuration conf, int numDataNodes, boolean format) throws Exception {
+
+      Field f = MiniDFSCluster.class.getDeclaredField("nameNodes");
+      f.setAccessible(true);
+      Class<?> c = Class.forName(MiniDFSCluster.class.getName()
+          + "$NameNodeInfo");
+      f.set(this, Array.newInstance(c, 1));
+
+      Method initMiniDFSCluster = MiniDFSCluster.class.getDeclaredMethod(
+          "initMiniDFSCluster", new Class<?>[] { Configuration.class,
+              int.class, boolean.class, boolean.class, boolean.class,
+              boolean.class, boolean.class, StartupOption.class,
+              String[].class, String[].class, long[].class, String.class,
+              boolean.class, boolean.class, MiniDFSNNTopology.class,
+              boolean.class, boolean.class });
+      initMiniDFSCluster.setAccessible(true);
+      initMiniDFSCluster.invoke(this, conf, numDataNodes, format, true, true,
+          true, true, null, null, null, null, null, true, false,
+          MiniDFSNNTopology.simpleSingleNN(nameNodePort, nameNodeHttpPort),
+          true, true);
+    }
+
+    public synchronized void startDataNodes(Configuration conf,
+        int numDataNodes, boolean manageDfsDirs, StartupOption operation,
+        String[] racks, String[] hosts, long[] simulatedCapacities,
+        boolean setupHostsFile, boolean checkDataNodeAddrConfig,
+        boolean checkDataNodeHostConfig) throws IOException {
+      super.startDataNodes(conf, numDataNodes, manageDfsDirs, operation, racks,
+          hosts, simulatedCapacities, setupHostsFile, true,
+          checkDataNodeHostConfig);
+    }
+  }
+
+  public static class MyConfiguration extends Configuration {
+
+    private final String bindAddress;
+
+    public MyConfiguration(String bindAddress, int namenodeRPCPort,
+        int namenodeHTTPPort) {
+      this.bindAddress = bindAddress;
+      super.set("dfs.namenode.rpc-address", bindAddress + ":" + namenodeRPCPort);
+      super.set("dfs.namenode.http-address", bindAddress + ":" + namenodeHTTPPort);
+    }
+
+    @Override
+    public void set(String key, String value) {
+      if (!key.equals("dfs.namenode.http-address")
+          && !key.equals("dfs.namenode.rpc-address")) {
+        super.set(key, value);
+      }
+    }
+  }
+
   /**
    * Startup the mini cluster
    * 
    * @throws IOException
    * @throws InterruptedException
    */
-  public void startup() throws IOException, InterruptedException {
-
-    // Initialize the Hadoop config we'll use
-    config = new Configuration();
+  public void startup() throws Exception {
 
     // If clean, then remove the localFsLocation so we can start fresh.
     if (clean) {
@@ -115,16 +172,29 @@ public class MiniKiteHBaseCluster {
       format = false;
     }
 
+    // get the environment variable OPENSHIFT_JBOSSEWS_IP, and make that the
+    // host ip address for binding
+    String bindAddress = "127.0.0.1";
+    if (System.getenv("OPENSHIFT_JBOSSEWS_IP") != null) {
+      bindAddress = System.getenv("OPENSHIFT_JBOSSEWS_IP");
+    }
+    
+    // Initialize the Hadoop config we'll use
+    config = new MyConfiguration(bindAddress, 18020, 15070);
+
     // Start a 1 namenode, 1 datanode mini DFS cluster
+    config.set("dfs.datanode.address", "127.0.0.1:15010");
+    config.set("dfs.datanode.http.address", "127.0.0.1:15075");
+    config.set("dfs.datanode.ipc.address", "127.0.0.1:15020");
     config.set("hdfs.minidfs.basedir", dfsLocation);
-    dfsCluster = new MiniDFSCluster.Builder(config).format(format)
-        .numDataNodes(1).manageDataDfsDirs(true).manageNameDfsDirs(true)
-        .build();
+    // DFS_DATANODE_HOST_NAME_KEY
+    config.set("dfs.datanode.hostname", "ENV_VALUE");
+    dfsCluster = new MyMiniDFSCluster(18020, 15070, config, 1, format);
     dfsCluster.waitClusterUp();
     FileSystem fs = dfsCluster.getFileSystem();
 
     // Start a 1 node ZK Cluster
-    zkCluster = new MiniZooKeeperCluster(config);
+    zkCluster = new MiniKiteZooKeeperCluster(config);
     zkCluster.setDefaultClientPort(zkPort);
     int clientPort = zkCluster.startup(new File(zkLocation), 1);
     config.set(HConstants.ZOOKEEPER_CLIENT_PORT, Integer.toString(clientPort));
@@ -148,9 +218,21 @@ public class MiniKiteHBaseCluster {
       config.setInt(ServerManager.WAIT_ON_REGIONSERVERS_MAXTOSTART, numSlaves);
     }
 
-    // Start the HBase cluster
-    hbaseCluster = new MiniHBaseCluster(config, numMasters, numSlaves, null,
-        null);
+    // TODO: Start the HBase cluster with 0 masters and slaves. Set the ports
+    // properly on the hbaseCluster conf object, and then call startMaster and
+    // startSlave respecitvely.
+    hbaseCluster = new MiniHBaseCluster(config, 0, 0, null, null);
+    hbaseCluster.getConf().set("hbase.master.info.port", "-1");
+    hbaseCluster.getConf().set("hbase.regionserver.info.port", "-1");
+    hbaseCluster.getConf().set(HConstants.MASTER_PORT, "16000");
+    hbaseCluster.getConf().set(HConstants.REGIONSERVER_PORT, "16020");
+    hbaseCluster.startMaster();
+    hbaseCluster.startRegionServer();
+    while (true) {
+      if (hbaseCluster.getRegionServer(0).isOnline()) {
+        break;
+      }
+    }
     // Don't leave here till we've done a successful scan of the hbase:meta
     HTable t = new HTable(config, ".META.");
     ResultScanner s = t.getScanner(new Scan());
