@@ -228,8 +228,6 @@ public class MiniKiteHBaseCluster {
       // and will allow a datanode to connect regardless.
       config.setBoolean("dfs.namenode.datanode.registration.ip-hostname-check",
           false);
-      // TODO: I think I can remove this. DFS_DATANODE_HOST_NAME_KEY
-      // config.set("dfs.datanode.hostname", "127.0.0.1");
     } else {
       config = new Configuration();
     }
