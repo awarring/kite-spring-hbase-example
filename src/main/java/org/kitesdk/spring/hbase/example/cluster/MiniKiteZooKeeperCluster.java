@@ -160,8 +160,12 @@ public class MiniKiteZooKeeperCluster {
       while (true) {
         try {
           standaloneServerFactory = new NIOServerCnxnFactory();
+          String bindAddress = "0.0.0.0";
+          if (System.getenv("OPENSHIFT_JBOSSEWS_IP") != null) {
+            bindAddress = System.getenv("OPENSHIFT_JBOSSEWS_IP");
+          }
           standaloneServerFactory.configure(
-            new InetSocketAddress("127.0.0.1", tentativePort),
+            new InetSocketAddress(bindAddress, tentativePort),
             configuration.getInt(HConstants.ZOOKEEPER_MAX_CLIENT_CNXNS,
               1000));
         } catch (BindException e) {
@@ -176,7 +180,12 @@ public class MiniKiteZooKeeperCluster {
 
       // Start up this ZK server
       standaloneServerFactory.startup(server);
-      if (!waitForServerUp(tentativePort, CONNECTION_TIMEOUT)) {
+      
+      String serverHostname = "localhost";
+      if (System.getenv("OPENSHIFT_JBOSSEWS_IP") != null) {
+        serverHostname = System.getenv("OPENSHIFT_JBOSSEWS_IP");
+      }
+      if (!waitForServerUp(serverHostname, tentativePort, CONNECTION_TIMEOUT)) {
         throw new IOException("Waiting for startup of standalone server");
       }
 
@@ -335,11 +344,11 @@ public class MiniKiteZooKeeperCluster {
   }
 
   // XXX: From o.a.zk.t.ClientBase
-  private static boolean waitForServerUp(int port, long timeout) {
+  private static boolean waitForServerUp(String hostname, int port, long timeout) {
     long start = System.currentTimeMillis();
     while (true) {
       try {
-        Socket sock = new Socket("localhost", port);
+        Socket sock = new Socket(hostname, port);
         BufferedReader reader = null;
         try {
           OutputStream outstream = sock.getOutputStream();
@@ -360,7 +369,7 @@ public class MiniKiteZooKeeperCluster {
         }
       } catch (IOException e) {
         // ignore as this is expected
-        LOG.info("server localhost:" + port + " not up " + e);
+        LOG.info("server " + hostname + ":" + port + " not up " + e);
       }
 
       if (System.currentTimeMillis() > start + timeout) {

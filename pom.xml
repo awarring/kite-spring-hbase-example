@@ -1,6 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
+
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.cloudera</groupId>
   <artifactId>kite.spring.hbase.example</artifactId>
@@ -87,27 +88,27 @@
     <!-- KiteSDK dependencies -->
     <dependency>
       <groupId>org.kitesdk</groupId>
-      <artifactId>kite-hadoop-cdh4-dependencies</artifactId>
+      <artifactId>kite-hadoop-cdh5-dependencies</artifactId>
       <version>0.16.0</version>
       <type>pom</type>
       <scope>compile</scope> <!-- provide Hadoop dependencies -->
     </dependency>
     <dependency>
       <groupId>org.kitesdk</groupId>
-      <artifactId>kite-hbase-cdh4-dependencies</artifactId>
+      <artifactId>kite-hbase-cdh5-dependencies</artifactId>
       <version>0.16.0</version>
       <type>pom</type>
       <scope>compile</scope> <!-- provide HBase dependencies -->
     </dependency>
     <dependency>
       <groupId>org.kitesdk</groupId>
-      <artifactId>kite-hadoop-cdh4-test-dependencies</artifactId>
+      <artifactId>kite-hadoop-cdh5-test-dependencies</artifactId>
       <version>0.16.0</version>
       <type>pom</type>
     </dependency>
     <dependency>
       <groupId>org.kitesdk</groupId>
-      <artifactId>kite-hbase-cdh4-test-dependencies</artifactId>
+      <artifactId>kite-hbase-cdh5-test-dependencies</artifactId>
       <version>0.16.0</version>
       <type>pom</type>
     </dependency>
@@ -153,7 +154,7 @@
     <resources>
       <resource>
         <directory>src/main/resources</directory>
-      </resource>
+       </resource>
       <resource>
         <directory>src/main/avro</directory>
       </resource>
@@ -163,6 +164,8 @@
         <artifactId>maven-war-plugin</artifactId>
         <configuration>
           <filteringDeploymentDescriptors>true</filteringDeploymentDescriptors>
+          <outputDirectory>webapps</outputDirectory>
+          <warName>ROOT</warName>
           <webResources>
             <resource>
               <directory>src/main/webapp/WEB-INF/</directory>
