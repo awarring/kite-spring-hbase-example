@@ -10,7 +10,12 @@ SNAPSHOT = {
 			$(this).toggleClass("expanded");
 			if( $(this).hasClass("expanded") ){
 				var divWidth = $(window).width() - 40;
-				$(this).parent().animate( {width: divWidth+"px"}, "fast");
+				$(this).parent().animate( {width: divWidth+"px"}, "fast", function(){
+					if( $(this).attr("id") == "pageFrame" ){
+						var pos = $("#pageFrame").position().top;
+						$(window).scrollTop(pos);
+					}
+				});
 			}else{
 				$(this).parent().animate( {width: "45%"}, "fast");
 			}
@@ -31,7 +36,7 @@ SNAPSHOT = {
 			
 			if( SNAPSHOT.validURL(url) ){
 				
-				$.post("http://localhost:8080/takeSnapshot", { url: url }, function(data){
+				$.post("/takeSnapshot", { url: url }, function(data){
 					
 					if( data != null ){
 						if( typeof data.title != "undefined"){
@@ -44,11 +49,25 @@ SNAPSHOT = {
 						$("#metaList").append("<li><span>URL:</span> " + url + "</li>");
 						
 						for( prop in data ){
-							if( prop != "title" && prop != "url" ){
+							if( prop != "title" && prop != "url" && prop != "outlinks" ){
+								
 								$("#metaList").append("<li><span>" + prop + ":</span> " + data[prop].toString() + "</li>");
+							
+							}else if( prop == "outlinks"){
+								
+								var htmlStr = "<li><span>" + prop + ":</span> <ul>";
+								var linkArray = data[prop] || [];
+								
+								for( var i=0, maxi=linkArray.length; i < maxi; i++ ){
+									htmlStr += "<li>" + linkArray[i] + "</li>";
+								}
+								
+								htmlStr += "</ul></li>";
+								
+								$("#metaList").append(htmlStr);
 							}
 						}
-						
+						SNAPSHOT.setDivHeight();
 						SNAPSHOT.addWebPageContent( url );
 					}else{
 						$(".errorMsg").html("Sorry. No data returned");
@@ -56,7 +75,7 @@ SNAPSHOT = {
 					
 				});
 				
-				$("#pageFrame iframe").attr("src", url)
+				//$("#pageFrame iframe").attr("src", url)
 				
 			}else{
 				$(".errorMsg").html("<b>Enter a valid url.  ie:</b> <em>http://www.google.com</em>");
@@ -66,10 +85,11 @@ SNAPSHOT = {
 	},
 	
 	addWebPageContent: function( url ){
-		var ajaxURL = "http://localhost:8080/mostRecentContent?url=" + url;
+		var ajaxURL = "/mostRecentContent?url=" + url;
 		$.getJSON( ajaxURL, function(data){
 			if( data != null  && typeof data.content != "undefined" ){
-				$("#pageContent pre").text( data.content );
+				var contentWithBaseSet = data.content.replace( "<head>", "<head><base href='" + url +"' target='_blank'></base>")
+				document.getElementById("iframeContent").contentWindow.document.write(contentWithBaseSet);
 			}
 			$(".container").show();
 		});
@@ -87,10 +107,16 @@ SNAPSHOT = {
 	clearPage : function(){
 		$(".errorMsg").html("");
 		$("#metaList").html("");
-		$("#pageContent pre").html("");
 		$("#pageFrame .header").text(" ");
 		$("#pageFrame iframe").attr("src", "");
 		$("#pageFrame iframe").html("");
+	},
+	
+	setDivHeight : function(){
+		var contentHeight = $(window).height() - 260;
+		var iframeHeight = contentHeight - 8;
+		$(".content").height(contentHeight + "px");
+		$("#iframeContent").height(iframeHeight + "px");
 	}
 	
 }
