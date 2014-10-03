@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 @RequestMapping("/")
@@ -36,8 +37,10 @@ public class WebPageSnapshotController {
 
   @RequestMapping(value = "/takeSnapshot", method = RequestMethod.POST)
   @ResponseBody
-  public WebPageSnapshotMeta takeSnapshot(@RequestParam("url") String url) throws IOException {
-    return webPageSnapshotService.takeSnapshot(url);
+  public WebPageSnapshotMeta takeSnapshot(@RequestParam("url") String url)
+      throws IOException {
+    webPageSnapshotService.takeSnapshot(url);
+    return getMostRecentMeta(url);
   }
 
   @RequestMapping(value = "/mostRecentMeta", method = RequestMethod.GET)
@@ -52,4 +55,12 @@ public class WebPageSnapshotController {
       @RequestParam("url") String url) {
     return webPageSnapshotService.getWebPageSnapshotContent(url);
   }
+
+  @RequestMapping(value = "/demo", method = RequestMethod.GET)
+  public ModelAndView getHome() {
+    ModelAndView mav = new ModelAndView();
+    mav.setViewName("get_snapshot");
+    return mav;
+  }
+
 }
