@@ -34,7 +34,7 @@
       <map>
         <entry key="webpagesnapshots.WebPageSnapshotModel"
           value="classpath:hbase-models/WebPageSnapshotModel.avsc" />
-        <entry key="webpagesnapshots.WebPageRedirectModel"
+        <entry key="webpageredirects.WebPageRedirectModel"
           value="classpath:hbase-models/WebPageRedirectModel.avsc" />
       </map>
     </constructor-arg>
