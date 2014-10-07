@@ -5,5 +5,6 @@
 	<link rel="stylesheet" type="text/css" href="${contextPath}/resources/css/reset.css" />
 	<link rel="stylesheet" type="text/css" href="${contextPath}/resources/css/snapshot.css" />
 	<script type="text/javascript" src="${contextPath}/resources/javascript/jquery-1.11.1.min.js"> </script>
+	<script type="text/javascript" src="${contextPath}/resources/javascript/jquery-dateFormat.min.js"> </script>
 	<script type="text/javascript" src="${contextPath}/resources/javascript/snapshot.js"> </script>
 </head>

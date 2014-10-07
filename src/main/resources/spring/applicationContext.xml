@@ -15,6 +15,14 @@
     <constructor-arg index="1"
       value="org.kitesdk.spring.hbase.example.model.WebPageSnapshotModel" />
   </bean>
+  
+  <bean id="webPageRedirectModels" class="org.kitesdk.data.Datasets"
+    factory-method="load" depends-on="hbasePropertyConfigurer">
+    <constructor-arg index="0"
+      value="dataset:hbase:${hbase.zk.host}:${hbase.zk.port}/webpageredirects.WebPageRedirectModel" />
+    <constructor-arg index="1"
+      value="org.kitesdk.spring.hbase.example.model.WebPageRedirectModel" />
+  </bean>
 
   <bean id="conversionService"
     class="org.springframework.context.support.ConversionServiceFactoryBean">

@@ -3,6 +3,7 @@
   "name": "WebPageSnapshotModel",
   "namespace": "org.kitesdk.spring.hbase.example.model",
   "doc": "A WebPage record",
+  
   "fields": [
     {
       "name": "url",

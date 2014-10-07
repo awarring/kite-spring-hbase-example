@@ -15,7 +15,8 @@
     </property>
     <property name="properties">
       <props>
-        <prop key="hbase.zk.host">#{systemEnvironment['OPENSHIFT_JBOSSEWS_IP']}</prop>
+        <prop key="hbase.zk.host">#{systemEnvironment['OPENSHIFT_JBOSSEWS_IP']}
+        </prop>
       </props>
     </property>
   </bean>
@@ -33,6 +34,8 @@
       <map>
         <entry key="webpagesnapshots.WebPageSnapshotModel"
           value="classpath:hbase-models/WebPageSnapshotModel.avsc" />
+        <entry key="webpagesnapshots.WebPageRedirectModel"
+          value="classpath:hbase-models/WebPageRedirectModel.avsc" />
       </map>
     </constructor-arg>
   </bean>

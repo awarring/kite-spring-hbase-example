@@ -1,8 +1,36 @@
 <html>
-<head>
-  <title>Hello!</title>
-</head>
-<body>
-  <h1>Hello Spring Kite HBase World!</h1>
-</body>
+
+#parse( "head.vm" )
+
+	<body id="GetSnapShot" class="center">
+		<h1>Webpage Snapshot Demo</h1>
+		<div id="urlForm" >
+			Enter a URL <input type="text" id="urlTxtBox" name="url" size="70" /> <input id="takeSnapshotBtn" type="button" value="Take Snapshot" /> <input id="viewSnapshotBtn" type="button" value="View Snapshot" />
+			<div class="infoMsg"></div>
+			<div class="warnMsg"></div>
+			<div class="errorMsg"></div>
+			<div id="tsContainer" class="hidden">Snapshot Timestamp:<select id="tsSelectBox"></select></div>
+		</div>
+		
+		<div class="container hidden" id="metaData" >
+			<div class="header">Meta Data</div>
+			<div class="content">
+				<ul id="metaList"></ul>
+			</div>
+		</div>
+		
+		<div class="container hidden" id="pageFrame" >
+			<div class="header"></div>
+			<div class="content">
+				<iframe id="iframeContent"></iframe>
+			</div>
+		</div>
+		
+		<script type="text/javascript">
+			$(document).ready(function(){
+				SNAPSHOT.init();
+			});
+		</script>
+		
+	</body>
 </html>

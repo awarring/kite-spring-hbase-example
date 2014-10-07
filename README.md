@@ -41,11 +41,10 @@ To run on openshift, create a JBoss Tomcat7 application, giving this github
 as the source application. See openshift docs for further directions on
 deploying an application.
 
-Today, there's no UI, so to test the deployment, you can use the REST api to
-take and fetch snapshots. To take a snapshot, run:
+Once launched, you can view the web application in your browser by going to
+the appropriate URL. For example, if launched locally with the above maven
+command, you can visit it by going to:
 
-curl --data "url=http://www.google.com/" http://hostname/takeSnapshot
+http://localhost:8080/
 
-Then go go to the following URL in your browser to see the result:
-
-http://hostname/mostRecentMeta?url=http://www.google.com/
+Once there, you can take snapshots, and view older snapshots of web pages.
