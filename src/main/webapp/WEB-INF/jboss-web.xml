@@ -1,0 +1,6 @@
+<jboss-web>
+    <security-domain>jboss-web-policy</security-domain>
+    <valve>
+      <class-name>org.jboss.web.rewrite.RewriteValve</class-name>
+    </valve>
+</jboss-web>

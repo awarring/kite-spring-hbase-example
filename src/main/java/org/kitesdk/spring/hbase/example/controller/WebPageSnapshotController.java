@@ -40,7 +40,7 @@ public class WebPageSnapshotController {
   @Autowired
   private WebPageSnapshotService webPageSnapshotService;
 
-  @RequestMapping(value = "/", method = RequestMethod.GET)
+  @RequestMapping(value = "/home", method = RequestMethod.GET)
   public ModelAndView getHome() {
     ModelAndView mav = new ModelAndView();
     mav.setViewName("home");
