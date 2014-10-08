@@ -8,10 +8,10 @@
   <version>0.0.1</version>
   <packaging>war</packaging>
 
-  <parent>
+  <parent> 
     <groupId>org.kitesdk</groupId>
-    <artifactId>kite-app-parent-cdh4</artifactId>
-    <version>0.16.0</version>
+    <artifactId>kite-app-parent-cdh5</artifactId>
+    <version>0.16.1-SNAPSHOT</version>
   </parent>
 
   <profiles>
@@ -95,21 +95,21 @@
     <dependency>
       <groupId>org.kitesdk</groupId>
       <artifactId>kite-hadoop-cdh5-dependencies</artifactId>
-      <version>0.16.0</version>
+      <version>0.16.1-SNAPSHOT</version>
       <type>pom</type>
       <scope>compile</scope> <!-- provide Hadoop dependencies -->
     </dependency>
     <dependency>
       <groupId>org.kitesdk</groupId>
       <artifactId>kite-hbase-cdh5-dependencies</artifactId>
-      <version>0.16.0</version>
+      <version>0.16.1-SNAPSHOT</version>
       <type>pom</type>
       <scope>compile</scope> <!-- provide HBase dependencies -->
     </dependency>
     <dependency>
       <groupId>org.kitesdk</groupId>
       <artifactId>kite-hadoop-cdh5-test-dependencies</artifactId>
-      <version>0.16.0</version>
+      <version>0.16.1-SNAPSHOT</version>
       <type>pom</type>
       <exclusions>
         <exclusion>
@@ -121,12 +121,23 @@
     <dependency>
       <groupId>org.kitesdk</groupId>
       <artifactId>kite-hbase-cdh5-test-dependencies</artifactId>
-      <version>0.16.0</version>
+      <version>0.16.1-SNAPSHOT</version>
       <type>pom</type>
       <exclusions>
         <exclusion>
           <artifactId>servlet-api-2.5</artifactId>
           <groupId>org.mortbay.jetty</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.kitesdk</groupId>
+      <artifactId>kite-minicluster</artifactId>
+      <version>0.16.1-SNAPSHOT</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>servlet-api</artifactId>
+          <groupId>javax.servlet</groupId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -253,4 +264,23 @@
       </plugin>
     </plugins>
   </build>
+
+  <repositories>
+    <repository>
+      <id>central</id>
+      <name>Maven Central Repository</name>
+      <url>http://repo.maven.apache.org/maven2/</url>
+    </repository>
+    <repository>
+      <id>central.snapshots</id>
+      <name>Maven Central Snapshot Repository</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 </project>

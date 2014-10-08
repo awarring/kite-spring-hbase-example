@@ -369,7 +369,7 @@ public class WebPageSnapshotService {
   private String getDescriptionFromDocument(Document doc) {
     Elements metaDescriptionElements = doc.select("meta[name=description]");
     return metaDescriptionElements.size() > 0 ? metaDescriptionElements
-        .attr("content") : null;
+        .attr("content") : "";
   }
 
   /**

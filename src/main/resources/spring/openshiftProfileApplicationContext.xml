@@ -21,16 +21,94 @@
     </property>
   </bean>
 
-  <bean id="cluster"
-    class="org.kitesdk.spring.hbase.example.cluster.MiniKiteHBaseCluster"
-    init-method="startup" destroy-method="shutdown">
-    <constructor-arg index="0" value="${hbase.local.fs.path}" />
-    <constructor-arg index="1" value="${hbase.zk.port}" />
-    <constructor-arg index="2" value="${hbase.clean.cluster}" />
+  <bean id="clusterBuilder" class="org.kitesdk.minicluster.MiniCluster$Builder" />
+
+  <bean
+    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="clusterBuilder" />
+    <property name="targetMethod" value="workDir" />
+    <property name="arguments">
+      <list>
+        <value>${hbase.local.fs.path}</value>
+      </list>
+    </property>
   </bean>
 
-  <bean id="datasets" factory-bean="cluster" factory-method="createOrUpdateDatasets">
-    <constructor-arg index="0">
+  <bean
+    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="clusterBuilder" />
+    <property name="targetMethod" value="bindIP" />
+    <property name="arguments">
+      <list>
+        <value>${hbase.zk.host}</value>
+      </list>
+    </property>
+  </bean>
+
+  <bean
+    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="clusterBuilder" />
+    <property name="targetMethod" value="zkPort" />
+    <property name="arguments">
+      <list>
+        <value>${hbase.zk.port}</value>
+      </list>
+    </property>
+  </bean>
+
+  <bean
+    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="clusterBuilder" />
+    <property name="targetMethod" value="clean" />
+    <property name="arguments">
+      <list>
+        <value>${hbase.clean.cluster}</value>
+      </list>
+    </property>
+  </bean>
+
+  <bean
+    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="clusterBuilder" />
+    <property name="targetMethod" value="addService" />
+    <property name="arguments">
+      <list>
+        <value>org.kitesdk.minicluster.HdfsService</value>
+      </list>
+    </property>
+  </bean>
+
+  <bean
+    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="clusterBuilder" />
+    <property name="targetMethod" value="addService" />
+    <property name="arguments">
+      <list>
+        <value>org.kitesdk.minicluster.ZookeeperService</value>
+      </list>
+    </property>
+  </bean>
+
+  <bean
+    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="clusterBuilder" />
+    <property name="targetMethod" value="addService" />
+    <property name="arguments">
+      <list>
+        <value>org.kitesdk.minicluster.HBaseService</value>
+      </list>
+    </property>
+  </bean>
+
+  <bean id="cluster" class="org.kitesdk.minicluster.MiniCluster"
+    factory-bean="clusterBuilder" factory-method="build" init-method="start"
+    destroy-method="stop" />
+
+  <bean id="datasets" class="org.kitesdk.spring.hbase.example.helper.DevHelper"
+    factory-method="createOrUpdateDatasets">
+    <constructor-arg index="0" value="${hbase.zk.host}" />
+    <constructor-arg index="1" value="${hbase.zk.port}" />
+    <constructor-arg index="2">
       <map>
         <entry key="webpagesnapshots.WebPageSnapshotModel"
           value="classpath:hbase-models/WebPageSnapshotModel.avsc" />
