@@ -45,6 +45,6 @@ Once launched, you can view the web application in your browser by going to
 the appropriate URL. For example, if launched locally with the above maven
 command, you can visit it by going to:
 
-http://localhost:8080/demo
+http://localhost:8080/home
 
 Once there, you can take snapshots, and view older snapshots of web pages.
