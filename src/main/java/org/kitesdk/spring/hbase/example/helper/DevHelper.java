@@ -8,6 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.kitesdk.data.DatasetDescriptor;
 import org.kitesdk.data.Datasets;
 import org.kitesdk.data.RandomAccessDataset;
@@ -19,6 +24,7 @@ import org.kitesdk.data.RandomAccessDataset;
 public class DevHelper {
 
   private static final String CLASSPATH_PREFIX = "classpath:";
+  private static final String MANAGED_SCHEMAS_TABLE = "managed_schemas";
 
   /**
    * Create the HBase datasets in the map of dataset names to schema files
@@ -38,6 +44,8 @@ public class DevHelper {
   public static List<RandomAccessDataset<?>> createOrUpdateDatasets(
       String zkHost, String zkPort, Map<String, String> datasetNameSchemaMap)
       throws URISyntaxException, IOException {
+
+    createManagedSchemasTable(zkHost, zkPort);
 
     List<RandomAccessDataset<?>> datasets = new ArrayList<RandomAccessDataset<?>>();
     for (Entry<String, String> entry : datasetNameSchemaMap.entrySet()) {
@@ -65,5 +73,34 @@ public class DevHelper {
       }
     }
     return datasets;
+  }
+
+  /**
+   * Create the required HBase tables for the Kite HBase module. If those are
+   * already initialized, this method will do nothing.
+   * 
+   * @param zkHost
+   *          HBase zookeeper client hostname
+   * @param zkPort
+   *          HBase zookeeper client port
+   */
+  public static void createManagedSchemasTable(String zkHost, String zkPort)
+      throws IOException {
+    Configuration config = HBaseConfiguration.create();
+    config.set("hbase.zookeeper.quorum", zkHost);
+    config.set("hbase.zookeeper.property.clientPort", zkPort);
+    HBaseAdmin admin = new HBaseAdmin(config);
+    try {
+      if (!admin.tableExists(MANAGED_SCHEMAS_TABLE)) {
+        @SuppressWarnings("deprecation")
+        HTableDescriptor desc = new HTableDescriptor(MANAGED_SCHEMAS_TABLE);
+        desc.addFamily(new HColumnDescriptor("meta"));
+        desc.addFamily(new HColumnDescriptor("schema"));
+        desc.addFamily(new HColumnDescriptor("_s"));
+        admin.createTable(desc);
+      }
+    } finally {
+      admin.close();
+    }
   }
 }

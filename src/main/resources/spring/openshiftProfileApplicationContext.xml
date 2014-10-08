@@ -100,6 +100,18 @@
     </property>
   </bean>
 
+  <bean
+    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <property name="targetObject" ref="clusterBuilder" />
+    <property name="targetMethod" value="setServiceConfig" />
+    <property name="arguments">
+      <list>
+        <value>hbase-master-port</value>
+        <value>16000</value>
+      </list>
+    </property>
+  </bean>
+
   <bean id="cluster" class="org.kitesdk.minicluster.MiniCluster"
     factory-bean="clusterBuilder" factory-method="build" init-method="start"
     destroy-method="stop" />

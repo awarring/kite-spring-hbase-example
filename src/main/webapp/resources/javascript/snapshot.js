@@ -23,6 +23,13 @@ SNAPSHOT = {
 			}
 		});
 
+		$("#urlTxtBox").keydown(function (e){
+		    if(e.keyCode == 13){
+		    	e.preventDefault();
+		    	$("#takeSnapshotBtn").click();
+		    }
+		});
+
 		$("#viewSnapshotBtn").click( function(){
 			var url = SNAPSHOT.getUrl();
 
