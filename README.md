@@ -37,14 +37,19 @@ HDFS and HBase cluster in the app):
 
 env MAVEN_OPTS="-Xmx2048m -XX:MaxPermSize=256m" mvn clean install tomcat7:run
 
-To run on openshift, create a JBoss Tomcat7 application, giving this github
-as the source application. See openshift docs for further directions on
-deploying an application.
-
 Once launched, you can view the web application in your browser by going to
-the appropriate URL. For example, if launched locally with the above maven
-command, you can visit it by going to:
+the appropriate URL. For example:
 
 http://localhost:8080/home
 
 Once there, you can take snapshots, and view older snapshots of web pages.
+
+Running in RedHat OpenShift
+===========================
+
+1. rhc app create snapshot https://raw.githubusercontent.com/kite-sdk/kite-minicluster-openshift-cartridge/master/metadata/manifest.yml jbossews-2.0 -g large
+2. rhc cartridge storage jbossews-2.0 --app snapshot --set 4
+3. cd snapshot
+4. git remote add upstream -m master git://github.com/kite-sdk/kite-spring-hbase-example.git
+5. git pull -s recursive -X theirs upstream master
+6. git push origin master
