@@ -8,113 +8,17 @@
   <bean id="hbasePropertyConfigurer"
     class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
     <property name="ignoreUnresolvablePlaceholders" value="true" />
-    <property name="locations">
-      <list>
-        <value>classpath:/hbase-openshift.properties</value>
-      </list>
-    </property>
     <property name="properties">
       <props>
-        <prop key="hbase.zk.host">#{systemEnvironment['OPENSHIFT_JBOSSEWS_IP']}
+        <prop key="hbase.zk.host">
+          #{systemEnvironment['OPENSHIFT_KITEMINICLUSTER_IP']}
+        </prop>
+        <prop key="hbase.zk.port">
+          #{systemEnvironment['OPENSHIFT_KITEMINICLUSTER_ZOOKEEPER_PORT']}
         </prop>
       </props>
     </property>
   </bean>
-
-  <bean id="clusterBuilder" class="org.kitesdk.minicluster.MiniCluster$Builder" />
-
-  <bean
-    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject" ref="clusterBuilder" />
-    <property name="targetMethod" value="workDir" />
-    <property name="arguments">
-      <list>
-        <value>${hbase.local.fs.path}</value>
-      </list>
-    </property>
-  </bean>
-
-  <bean
-    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject" ref="clusterBuilder" />
-    <property name="targetMethod" value="bindIP" />
-    <property name="arguments">
-      <list>
-        <value>${hbase.zk.host}</value>
-      </list>
-    </property>
-  </bean>
-
-  <bean
-    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject" ref="clusterBuilder" />
-    <property name="targetMethod" value="zkPort" />
-    <property name="arguments">
-      <list>
-        <value>${hbase.zk.port}</value>
-      </list>
-    </property>
-  </bean>
-
-  <bean
-    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject" ref="clusterBuilder" />
-    <property name="targetMethod" value="clean" />
-    <property name="arguments">
-      <list>
-        <value>${hbase.clean.cluster}</value>
-      </list>
-    </property>
-  </bean>
-
-  <bean
-    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject" ref="clusterBuilder" />
-    <property name="targetMethod" value="addService" />
-    <property name="arguments">
-      <list>
-        <value>org.kitesdk.minicluster.HdfsService</value>
-      </list>
-    </property>
-  </bean>
-
-  <bean
-    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject" ref="clusterBuilder" />
-    <property name="targetMethod" value="addService" />
-    <property name="arguments">
-      <list>
-        <value>org.kitesdk.minicluster.ZookeeperService</value>
-      </list>
-    </property>
-  </bean>
-
-  <bean
-    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject" ref="clusterBuilder" />
-    <property name="targetMethod" value="addService" />
-    <property name="arguments">
-      <list>
-        <value>org.kitesdk.minicluster.HBaseService</value>
-      </list>
-    </property>
-  </bean>
-
-  <bean
-    class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-    <property name="targetObject" ref="clusterBuilder" />
-    <property name="targetMethod" value="setServiceConfig" />
-    <property name="arguments">
-      <list>
-        <value>hbase-master-port</value>
-        <value>16000</value>
-      </list>
-    </property>
-  </bean>
-
-  <bean id="cluster" class="org.kitesdk.minicluster.MiniCluster"
-    factory-bean="clusterBuilder" factory-method="build" init-method="start"
-    destroy-method="stop" />
 
   <bean id="datasets" class="org.kitesdk.spring.hbase.example.helper.DevHelper"
     factory-method="createOrUpdateDatasets">
